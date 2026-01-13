@@ -1,92 +1,178 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const SimpleApp());
+  runApp(const StopwatchApp());
 }
 
-class SimpleApp extends StatelessWidget {
-  const SimpleApp({super.key});
+class StopwatchApp extends StatelessWidget {
+  const StopwatchApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Simple UI App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const HomeScreen(),
+      theme: ThemeData.dark(),
+      home: const StopwatchScreen(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class StopwatchScreen extends StatefulWidget {
+  const StopwatchScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<StopwatchScreen> createState() => _StopwatchScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  String statusMessage = 'Press the button to continue';
+class _StopwatchScreenState extends State<StopwatchScreen> {
+  Timer? _timer;
+  int _elapsedMs = 0;
+  bool _isRunning = false;
 
-  void onButtonPressed() {
-    setState(() {
-      statusMessage = 'Action completed successfully';
+  void _start() {
+    if (_isRunning) return;
+    _isRunning = true;
+
+    _timer = Timer.periodic(const Duration(milliseconds: 10), (_) {
+      setState(() {
+        _elapsedMs += 10;
+      });
     });
+  }
+
+  void _stop() {
+    _timer?.cancel();
+    _isRunning = false;
+  }
+
+  void _reset() {
+    _stop();
+    setState(() {
+      _elapsedMs = 0;
+    });
+  }
+
+  String _formatTime() {
+    final minutes = (_elapsedMs ~/ 60000).toString().padLeft(2, '0');
+    final seconds = ((_elapsedMs % 60000) ~/ 1000).toString().padLeft(2, '0');
+    final ms = ((_elapsedMs % 1000) ~/ 10).toString().padLeft(2, '0');
+    return '$minutes:$seconds:$ms';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text('Simple Mobile App'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text("Today's Challenge"),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Circular Timer
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 220,
+                height: 220,
+                child: CircularProgressIndicator(
+                  value: (_elapsedMs % 60000) / 60000,
+                  strokeWidth: 10,
+                  backgroundColor: Colors.grey.shade800,
+                  valueColor: const AlwaysStoppedAnimation(
+                    Color(0xFF27E0D6),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'This application demonstrates a simple and clean Flutter UI layout '
-              'with static content and basic button functionality.',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
+              Column(
+                children: [
+                  Text(
+                    _formatTime(),
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF27E0D6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'ELAPSED',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
               ),
-              child: Text(
-                statusMessage,
-                style: const TextStyle(fontSize: 16),
+            ],
+          ),
+
+          const SizedBox(height: 50),
+
+          // Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _ControlButton(
+                icon: Icons.refresh,
+                label: 'Reset',
+                onTap: _reset,
               ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onButtonPressed,
-                child: const Text('Perform Action'),
+              _ControlButton(
+                icon: _isRunning ? Icons.pause : Icons.play_arrow,
+                label: _isRunning ? 'Stop' : 'Start',
+                onTap: _isRunning ? _stop : _start,
+                main: true,
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
+class _ControlButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool main;
+
+  const _ControlButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.main = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: main ? 70 : 55,
+            height: main ? 70 : 55,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: main ? const Color(0xFF27E0D6) : Colors.grey.shade800,
+            ),
+            child: Icon(
+              icon,
+              color: main ? Colors.black : Colors.white,
+              size: main ? 36 : 26,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.grey),
+        ),
+      ],
+    );
+  }
+}
