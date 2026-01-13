@@ -20,3 +20,6 @@ It displays the elapsed time in minutes, seconds, and milliseconds with a circul
 - Flutter
 - Dart
 - Material Design
+
+## Demo of the application 
+https://github.com/user-attachments/assets/9a651521-73ef-4de0-aa99-3431448674a9
